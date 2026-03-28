@@ -4,56 +4,304 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Black Armory — 계정 연동</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #060609;
+      --panel:    #0d0d14;
+      --gold:     #ceae33;
+      --gold-dim: #6e5d1a;
+      --text:     #ccc9bf;
+      --muted:    #565350;
+      --ok:       #4fa877;
+      --err:      #b84f4f;
+      --border:   rgba(206, 174, 51, 0.4);
+      --cut:      22px;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0e0e12;
-      color: #e0ddd5;
+      font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+      overflow: hidden;
     }
-    .card {
-      background: #1a1a22;
-      border: 1px solid #2a2a35;
-      border-radius: 12px;
-      padding: 40px 48px;
-      max-width: 440px;
-      width: 90%;
-      text-align: center;
+
+    /* ── 배경 텍스처 ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0px,
+          transparent 3px,
+          rgba(255, 255, 255, 0.013) 3px,
+          rgba(255, 255, 255, 0.013) 4px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px,
+          transparent 48px,
+          rgba(206, 174, 51, 0.025) 48px,
+          rgba(206, 174, 51, 0.025) 49px
+        );
+      pointer-events: none;
+      z-index: 0;
     }
-    h1   { font-size: 1.25rem; margin-bottom: 20px; color: #ceae33; }
-    p    { line-height: 1.7; color: #a09d95; margin-bottom: 10px; }
-    .ok  { color: #5cb85c; }
-    .err { color: #e05c5c; }
-    .spinner {
-      width: 32px; height: 32px;
-      border: 3px solid #2a2a35;
-      border-top-color: #ceae33;
+
+    /* 비네트 */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.65) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── 스캔라인 ── */
+    .scanline {
+      position: fixed;
+      left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(206, 174, 51, 0.04) 50%,
+        transparent 100%
+      );
+      animation: scan 8s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes scan {
+      0%   { top: -120px; }
+      100% { top: 100vh; }
+    }
+
+    /* ── 카드 ── */
+    .frame {
+      position: relative;
+      z-index: 1;
+      width: 420px;
+      max-width: 92vw;
+      --poly: polygon(
+        0 var(--cut),
+        var(--cut) 0,
+        calc(100% - var(--cut)) 0,
+        100% var(--cut),
+        100% calc(100% - var(--cut)),
+        calc(100% - var(--cut)) 100%,
+        var(--cut) 100%,
+        0 calc(100% - var(--cut))
+      );
+      clip-path: var(--poly);
+      background: var(--border);
+      padding: 1px;
+    }
+
+    .panel {
+      --poly: polygon(
+        0 var(--cut),
+        var(--cut) 0,
+        calc(100% - var(--cut)) 0,
+        100% var(--cut),
+        100% calc(100% - var(--cut)),
+        calc(100% - var(--cut)) 100%,
+        var(--cut) 100%,
+        0 calc(100% - var(--cut))
+      );
+      clip-path: var(--poly);
+      background: var(--panel);
+      padding: 44px 48px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── 로고 ── */
+    .logo {
+      margin-bottom: 20px;
+    }
+
+    /* ── 타이틀 ── */
+    .title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .subtitle {
+      font-size: 0.72rem;
+      letter-spacing: 0.28em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    /* ── 구분선 ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+      margin: 28px 0;
+    }
+
+    /* ── 스피너 ── */
+    .spinner-wrap {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      margin-bottom: 24px;
+    }
+
+    .ring {
+      position: absolute;
+      inset: 0;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 20px;
+      border: 2px solid transparent;
+    }
+    .ring-outer {
+      border-top-color: var(--gold);
+      border-right-color: var(--gold);
+      animation: spin 1.3s linear infinite;
+    }
+    .ring-mid {
+      inset: 9px;
+      border-bottom-color: rgba(206, 174, 51, 0.45);
+      animation: spin 0.9s linear infinite reverse;
+    }
+    .ring-inner {
+      inset: 18px;
+      border-top-color: rgba(206, 174, 51, 0.25);
+      animation: spin 1.7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 아이콘 ── */
+    .icon-wrap {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      margin-bottom: 24px;
+    }
+    .icon-wrap svg { width: 44px; height: 44px; }
+
+    /* ── 메세지 ── */
+    #msg {
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    #msg.ok  { color: var(--ok); }
+    #msg.err { color: var(--err); }
+
+    /* ── 힌트 ── */
+    #hint {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 12px;
+      min-height: 1em;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Black Armory</h1>
-    <div id="spinner" class="spinner"></div>
-    <p id="msg">번지넷 계정 연동 중...</p>
+  <div class="scanline"></div>
+
+  <div class="frame">
+    <div class="panel">
+
+      <!-- 로고 -->
+      <div class="logo">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 외곽 다이아몬드 -->
+          <polygon points="26,3 49,26 26,49 3,26"
+            stroke="#ceae33" stroke-width="1.4" fill="none"/>
+          <!-- 중간 다이아몬드 -->
+          <polygon points="26,10 42,26 26,42 10,26"
+            stroke="#ceae33" stroke-width="1" fill="rgba(206,174,51,0.06)"/>
+          <!-- 중심 마름모 -->
+          <polygon points="26,18 34,26 26,34 18,26"
+            fill="#ceae33" opacity="0.9"/>
+          <!-- 축 눈금 -->
+          <line x1="26" y1="3"  x2="26" y2="8"  stroke="#ceae33" stroke-width="1.4"/>
+          <line x1="49" y1="26" x2="44" y2="26" stroke="#ceae33" stroke-width="1.4"/>
+          <line x1="26" y1="49" x2="26" y2="44" stroke="#ceae33" stroke-width="1.4"/>
+          <line x1="3"  y1="26" x2="8"  y2="26" stroke="#ceae33" stroke-width="1.4"/>
+        </svg>
+      </div>
+
+      <div class="title">Black Armory</div>
+      <div class="subtitle">계정 연동</div>
+
+      <div class="divider"></div>
+
+      <!-- 스피너 -->
+      <div class="spinner-wrap" id="spinner-wrap">
+        <div class="ring ring-outer"></div>
+        <div class="ring ring-mid"></div>
+        <div class="ring ring-inner"></div>
+      </div>
+
+      <!-- 성공 아이콘 -->
+      <div class="icon-wrap" id="icon-ok">
+        <svg viewBox="0 0 44 44" fill="none">
+          <polygon points="22,3 41,22 22,41 3,22"
+            stroke="#4fa877" stroke-width="1.3" fill="none"/>
+          <polyline points="12,22 18,29 32,14"
+            stroke="#4fa877" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- 오류 아이콘 -->
+      <div class="icon-wrap" id="icon-err">
+        <svg viewBox="0 0 44 44" fill="none">
+          <polygon points="22,3 41,22 22,41 3,22"
+            stroke="#b84f4f" stroke-width="1.3" fill="none"/>
+          <line x1="15" y1="15" x2="29" y2="29" stroke="#b84f4f" stroke-width="2" stroke-linecap="round"/>
+          <line x1="29" y1="15" x2="15" y2="29" stroke="#b84f4f" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <p id="msg">번지넷 계정 연동 중...</p>
+      <p id="hint"></p>
+
+    </div>
   </div>
 
   <script>
     const LOCAL = 'http://localhost:7777/callback';
 
-    function setMsg(text, cls) {
-      document.getElementById('spinner').style.display = 'none';
+    function setStatus(text, type) {
+      document.getElementById('spinner-wrap').style.display = 'none';
+      document.getElementById('icon-ok').style.display  = type === 'ok'  ? 'flex' : 'none';
+      document.getElementById('icon-err').style.display = type === 'err' ? 'flex' : 'none';
+
       const el = document.getElementById('msg');
       el.textContent = text;
-      if (cls) el.className = cls;
+      el.className = type || '';
+
+      if (type === 'ok' || type === 'err') {
+        document.getElementById('hint').textContent = '이 창을 닫아도 됩니다.';
+      }
     }
 
     (async () => {
@@ -63,18 +311,17 @@
       const error  = params.get('error');
 
       if (error) {
-        setMsg('번지넷 인증이 거부되었습니다. 디스코드로 돌아가 다시 시도하세요.', 'err');
+        setStatus('번지넷 인증이 거부되었습니다.\n디스코드로 돌아가 다시 시도하세요.', 'err');
         return;
       }
 
       if (!code || !state) {
-        setMsg('잘못된 요청입니다.', 'err');
+        setStatus('잘못된 요청입니다.', 'err');
         return;
       }
 
-      // 브라우저 주소창 이동 — mixed content 정책 미적용
-      const url = `${LOCAL}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
-      window.location.href = url;
+      window.location.href =
+        `${LOCAL}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
     })();
   </script>
 </body>
