@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Black Armory — 계정 연동</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0e0e12;
+      color: #e0ddd5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #1a1a22;
+      border: 1px solid #2a2a35;
+      border-radius: 12px;
+      padding: 40px 48px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+    }
+    h1   { font-size: 1.25rem; margin-bottom: 20px; color: #ceae33; }
+    p    { line-height: 1.7; color: #a09d95; margin-bottom: 10px; }
+    .ok  { color: #5cb85c; }
+    .err { color: #e05c5c; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #2a2a35;
+      border-top-color: #ceae33;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Black Armory</h1>
+    <div id="spinner" class="spinner"></div>
+    <p id="msg">번지넷 계정 연동 중...</p>
+  </div>
+
+  <script>
+    const LOCAL = 'http://localhost:7777/callback';
+
+    function setMsg(text, cls) {
+      document.getElementById('spinner').style.display = 'none';
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      if (cls) el.className = cls;
+    }
+
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code   = params.get('code');
+      const state  = params.get('state');
+      const error  = params.get('error');
+
+      if (error) {
+        setMsg('번지넷 인증이 거부되었습니다. 디스코드로 돌아가 다시 시도하세요.', 'err');
+        return;
+      }
+
+      if (!code || !state) {
+        setMsg('잘못된 요청입니다.', 'err');
+        return;
+      }
+
+      // 브라우저 주소창 이동 — mixed content 정책 미적용
+      const url = `${LOCAL}?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+      window.location.href = url;
+    })();
+  </script>
+</body>
+</html>
